@@ -26,6 +26,7 @@ type Author struct {
 // Init struct book slice: slice is dynamic array size
 var books []Book
 
+// handle HTTP requests
 // Get all books
 // parmas w and r, they're TYPES http.ResponseWriter and *http.Request respectively.
 func getBooks(w http.ResponseWriter, r *http.Request) {
@@ -45,12 +46,29 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(&Book{})
 }
+
 func createBook(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var book Book
+	_ = json.NewDecoder(r.Body).Decode(&book)
+	book.ID = params["id"]
+	books = append(books, book)
+	json.NewEncoder(w).Encode(books)
+}
+
+func deleteBook(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	for index, item := range books {
+		if item.ID == params["id"] {
+			books = append(books[:index], books[index+1:]...)
+			break
+		}
+		json.NewEncoder(w).Encode(books)
+	}
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
-}
-func deleteBook(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func main() {
@@ -62,7 +80,7 @@ func main() {
 	books = append(books, Book{ID: "2", Isbn: "12345", Title: "Book Two", Author: &Author{Firstname: "John", Lastname: "Doe"}})
 
 	// API endpoint
-	r.HandleFunc("/api/books", getBook).Methods("GET")
+	r.HandleFunc("/api/books", getBooks).Methods("GET")
 	r.HandleFunc("/api/books/{id}", getBook).Methods("GET")
 	r.HandleFunc("/api/books", createBook).Methods("POST")
 	r.HandleFunc("/api/books/{id}", updateBook).Methods("PUT")
